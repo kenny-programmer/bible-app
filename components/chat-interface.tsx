@@ -67,6 +67,33 @@ export function ChatInterface({ sessionId, onNewSession }: ChatInterfaceProps) {
     setLoading(true);
 
     try {
+      // Check rate limit: 30 messages per day
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { count, error: countError } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('role', 'user')
+        .gte('created_at', today.toISOString());
+
+      const DAILY_LIMIT = 30;
+      if (count !== null && count >= DAILY_LIMIT) {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const hoursLeft = Math.floor((tomorrow.getTime() - Date.now()) / (1000 * 60 * 60));
+        const minutesLeft = Math.floor(((tomorrow.getTime() - Date.now()) % (1000 * 60 * 60)) / (1000 * 60));
+
+        toast({
+          title: 'Daily Limit Reached',
+          description: `You've used your ${DAILY_LIMIT} messages for today. Please try again in ${hoursLeft}h ${minutesLeft}m.`,
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
       let activeSessionId = sessionId;
 
       if (!activeSessionId) {
@@ -180,23 +207,20 @@ export function ChatInterface({ sessionId, onNewSession }: ChatInterfaceProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className={`flex w-full ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
+                  className={`flex w-full ${message.role === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
                 >
                   <div
-                    className={`max-w-[90%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-5 md:py-4 ${
-                      message.role === 'user'
+                    className={`max-w-[90%] md:max-w-[75%] rounded-2xl px-4 py-3 md:px-5 md:py-4 ${message.role === 'user'
                         ? 'bg-[#D4AF37] text-white shadow-sm'
                         : 'bg-white border-2 border-[#D4AF37]/10 shadow-sm'
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`text-[15px] md:text-base leading-relaxed ${
-                        message.role === 'user'
+                      className={`text-[15px] md:text-base leading-relaxed ${message.role === 'user'
                           ? 'text-white'
                           : 'text-[#333333]'
-                      }`}
+                        }`}
                       style={{
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',

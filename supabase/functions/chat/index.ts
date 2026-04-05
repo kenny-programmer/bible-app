@@ -1,3 +1,4 @@
+// @ts-nocheck
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const SYSTEM_PROMPT = `You are a knowledgeable Bible study partner and teacher. You help users understand Scripture, explore theology, and apply the Bible thoughtfully—not as a replacement for pastors or professional counselors, but as a patient study companion.
@@ -66,6 +67,7 @@ Deno.serve(async (req: Request) => {
     ];
 
     // Call Gemini API
+    let out = '';
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
@@ -83,25 +85,62 @@ Deno.serve(async (req: Request) => {
       }
     );
 
-    if (!response.ok) {
-      const errorData = await response.json();
+    if (response.ok) {
+      const data = await response.json();
+      const candidate = data.candidates?.[0];
+      const content = candidate?.content?.parts?.[0]?.text;
+      const finishReason = candidate?.finishReason;
+
+      if (!content) {
+        throw new Error('No content in response');
+      }
+
+      out = content.trim();
+      if (finishReason === 'MAX_TOKENS') {
+        out += '\n\n*(This reply hit the length limit—you can ask me to continue or narrow the topic.)*';
+      }
+    } else {
+      console.log('Gemini API failed, falling back to Grok API');
+      const errorData = await response.json().catch(() => ({}));
       console.error('Gemini API Error:', errorData);
-      throw new Error(errorData.error?.message || `API request failed: ${response.status}`);
-    }
 
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    const content = candidate?.content?.parts?.[0]?.text;
-    const finishReason = candidate?.finishReason;
+      const grokApiKey = Deno.env.get("GROK_API_KEY");
+      if (!grokApiKey) {
+        throw new Error(errorData.error?.message || `API request failed: ${response.status} and no GROK_API_KEY found`);
+      }
 
-    if (!content) {
-      throw new Error('No content in response');
-    }
+      // Convert messages to Groq format
+      const groqMessages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...messages,
+        { role: 'user', content: userMessage }
+      ];
 
-    let out = content.trim();
-    if (finishReason === 'MAX_TOKENS') {
-      out +=
-        '\n\n*(This reply hit the length limit—you can ask me to continue or narrow the topic.)*';
+      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${grokApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: groqMessages,
+          temperature: 0.65
+        })
+      });
+
+      if (!groqResponse.ok) {
+        const groqError = await groqResponse.json().catch(() => ({}));
+        throw new Error(groqError.error?.message || `Groq API request failed: ${groqResponse.status}`);
+      }
+
+      const groqData = await groqResponse.json();
+      const content = groqData.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No content in response from Groq');
+      }
+      out = content.trim();
     }
 
     return new Response(
