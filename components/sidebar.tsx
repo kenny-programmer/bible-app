@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CirclePlus as PlusCircle, MessageSquare, LogOut, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { BIBLE_VERSIONS } from '@/lib/bible-data';
 
 type SidebarProps = {
   currentSessionId: string | null;
@@ -47,10 +48,15 @@ export function Sidebar({ currentSessionId, onSessionSelect }: SidebarProps) {
   const handleBibleVersionChange = async (version: string) => {
     if (!user) return;
 
-    await supabase
+    const { error } = await supabase
       .from('profiles')
-      .update({ preferred_bible_version: version })
+      .update({ preferred_bible_version: version.toLowerCase() })
       .eq('id', user.id);
+
+    if (error) {
+      console.error('[Sidebar] Failed to update preferred_bible_version:', error);
+      return;
+    }
 
     await refreshProfile();
   };
@@ -75,16 +81,18 @@ export function Sidebar({ currentSessionId, onSessionSelect }: SidebarProps) {
           Bible Version
         </label>
         <Select
-          value={profile?.preferred_bible_version || 'KJV'}
+          value={profile?.preferred_bible_version?.toLowerCase() || 'kjv'}
           onValueChange={handleBibleVersionChange}
         >
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="KJV">King James Version</SelectItem>
-            <SelectItem value="WEB">World English Bible</SelectItem>
-            <SelectItem value="BSB">Berean Study Bible</SelectItem>
+            {BIBLE_VERSIONS.map((version) => (
+              <SelectItem key={version.value} value={version.value}>
+                {version.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

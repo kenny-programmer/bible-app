@@ -46,10 +46,15 @@ export default function HomePage() {
   const handleBibleVersionChange = async (version: string) => {
     if (!user) return;
 
-    await supabase
+    const { error } = await supabase
       .from('profiles')
-      .update({ preferred_bible_version: version.toUpperCase() })
+      .update({ preferred_bible_version: version.toLowerCase() })
       .eq('id', user.id);
+
+    if (error) {
+      console.error('[HomePage] Failed to update preferred_bible_version:', error);
+      return;
+    }
 
     await refreshProfile();
   };

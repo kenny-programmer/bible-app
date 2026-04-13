@@ -72,7 +72,6 @@ export type BibleVersion = 'kjv' | 'web' | 'bsb' | 'asv' | 'bbe' | 'clementine' 
 export const BIBLE_VERSIONS = [
   { value: 'kjv', label: 'King James Version (KJV)' },
   { value: 'web', label: 'World English Bible (WEB)' },
-  { value: 'bsb', label: 'Berean Study Bible (BSB)' },
   { value: 'asv', label: 'American Standard Version (ASV)' },
   { value: 'bbe', label: 'Bible in Basic English (BBE)' },
   { value: 'clementine', label: 'Clementine Latin Vulgate' },
