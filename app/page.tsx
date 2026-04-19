@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { BIBLE_BOOKS, BIBLE_VERSIONS } from '@/lib/bible-data';
@@ -9,10 +9,16 @@ import { BibleNavigator } from '@/components/bible-navigator';
 import { AIAssistant } from '@/components/ai-assistant';
 import { DailyVerse } from '@/components/daily-verse';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase-client';
 import { Loader as Loader2, LogOut, MessageCircle, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+
+const ALLOWED_BIBLE_VERSIONS = new Set(BIBLE_VERSIONS.map((v) => v.value));
+
+function normalizeBibleVersionKey(raw: string | null | undefined): string {
+  const key = raw?.toLowerCase().trim() || 'kjv';
+  return ALLOWED_BIBLE_VERSIONS.has(key) ? key : 'kjv';
+}
 
 export default function HomePage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth();
@@ -20,6 +26,10 @@ export default function HomePage() {
   const [currentBook, setCurrentBook] = useState("John");
   const [currentChapter, setCurrentChapter] = useState(1);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  /** Controlled select must not use only server value or the UI snaps back before Supabase finishes. */
+  const [localBibleVersion, setLocalBibleVersion] = useState('kjv');
+  /** Only seed `localBibleVersion` from Supabase once per login — never on every profile refetch (stale reads reset you to KJV). */
+  const bibleVersionSeededForUserId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,6 +44,17 @@ export default function HomePage() {
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (!user?.id) {
+      bibleVersionSeededForUserId.current = null;
+      return;
+    }
+    if (!profile) return;
+    if (bibleVersionSeededForUserId.current === user.id) return;
+    bibleVersionSeededForUserId.current = user.id;
+    setLocalBibleVersion(normalizeBibleVersionKey(profile.preferred_bible_version));
+  }, [user?.id, profile]);
+
   const handleNavigate = (book: string, chapter: number) => {
     setCurrentBook(book);
     setCurrentChapter(chapter);
@@ -46,10 +67,31 @@ export default function HomePage() {
   const handleBibleVersionChange = async (version: string) => {
     if (!user) return;
 
-    await supabase
+    const next = normalizeBibleVersionKey(version);
+    const previous = localBibleVersion;
+    setLocalBibleVersion(next);
+
+    const { data, error } = await supabase
       .from('profiles')
-      .update({ preferred_bible_version: version.toUpperCase() })
-      .eq('id', user.id);
+      .update({ preferred_bible_version: next.toUpperCase() })
+      .eq('id', user.id)
+      .select('preferred_bible_version')
+      .maybeSingle();
+
+    if (error) {
+      console.error('Failed to update Bible version:', error);
+      setLocalBibleVersion(previous);
+      return;
+    }
+
+    const updated = Array.isArray(data) ? data[0] : data;
+    if (!updated?.preferred_bible_version) {
+      console.error(
+        'Bible version was not saved (0 rows updated). Check that your profile row exists and RLS allows UPDATE on profiles.'
+      );
+      setLocalBibleVersion(previous);
+      return;
+    }
 
     await refreshProfile();
   };
@@ -92,6 +134,7 @@ export default function HomePage() {
               currentBook={currentBook}
               currentChapter={currentChapter}
               onNavigate={handleNavigate}
+              bibleVersion={localBibleVersion}
             />
 
             <Sheet>
@@ -109,24 +152,24 @@ export default function HomePage() {
 
                 <div className="space-y-6 mt-6 pb-4">
                   <div>
-                    <label className="text-sm md:text-base font-semibold text-[#333333] mb-2 block">
+                    <label
+                      htmlFor="bible-version"
+                      className="text-sm md:text-base font-semibold text-[#333333] mb-2 block"
+                    >
                       Bible Version
                     </label>
-                    <Select
-                      value={profile?.preferred_bible_version?.toLowerCase() || 'kjv'}
-                      onValueChange={handleBibleVersionChange}
+                    <select
+                      id="bible-version"
+                      className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-[15px] md:text-base text-[#333333] ring-offset-background focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40 focus:ring-offset-2"
+                      value={localBibleVersion}
+                      onChange={(e) => void handleBibleVersionChange(e.target.value)}
                     >
-                      <SelectTrigger className="w-full h-12 text-[15px] md:text-base">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BIBLE_VERSIONS.map((version) => (
-                          <SelectItem key={version.value} value={version.value}>
-                            {version.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      {BIBLE_VERSIONS.map((version) => (
+                        <option key={version.value} value={version.value}>
+                          {version.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="flex items-center gap-3 pt-4 border-t-2 border-[#D4AF37]/10">
@@ -160,7 +203,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <DailyVerse />
+      <DailyVerse bibleVersion={localBibleVersion} />
 
       <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-smooth pb-[max(12rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))] [-webkit-overflow-scrolling:touch] md:pb-10">
         <BibleReader
@@ -168,6 +211,7 @@ export default function HomePage() {
           chapter={currentChapter}
           onChapterChange={handleChapterChange}
           maxChapter={currentBookData?.chapters || 1}
+          bibleVersion={localBibleVersion}
         />
       </main>
 

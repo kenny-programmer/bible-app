@@ -67,7 +67,17 @@ export const BIBLE_BOOKS = [
   { name: 'Revelation', abbr: 'Rev', tagalog: 'Pahayag', chapters: 22, testament: 'New' },
 ];
 
-export type BibleVersion = 'kjv' | 'web' | 'bsb' | 'asv' | 'bbe' | 'clementine' | 'darby' | 'ylt' | 'tagalog';
+export type BibleVersion =
+  | 'kjv'
+  | 'web'
+  | 'bsb'
+  | 'asv'
+  | 'bbe'
+  | 'clementine'
+  | 'darby'
+  | 'ylt'
+  | 'tagalog'
+  | 'asnd';
 
 export const BIBLE_VERSIONS = [
   { value: 'kjv', label: 'King James Version (KJV)' },
@@ -79,12 +89,14 @@ export const BIBLE_VERSIONS = [
   { value: 'darby', label: 'Darby Translation' },
   { value: 'ylt', label: "Young's Literal Translation" },
   { value: 'tagalog', label: 'Ang Biblia (Tagalog)' },
+  { value: 'asnd', label: 'Ang Salita ng Dios (Tagalog ASND)' },
 ];
 
 export function getBookDisplayName(bookName: string, version: string): string {
   const book = BIBLE_BOOKS.find(b => b.name === bookName);
   if (!book) return bookName;
 
-  const isTagalog = version?.toLowerCase() === 'tagalog';
-  return isTagalog ? book.tagalog : book.name;
+  const v = version?.toLowerCase() ?? '';
+  const isTagalogUi = v === 'tagalog' || v === 'asnd';
+  return isTagalogUi ? book.tagalog : book.name;
 }

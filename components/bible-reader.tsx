@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchChapter } from '@/lib/bible-api';
+import { getBookDisplayName } from '@/lib/bible-data';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { Loader as Loader2, ChevronLeft, ChevronRight, Bookmark, BookmarkCheck } from 'lucide-react';
@@ -13,36 +14,49 @@ type BibleReaderProps = {
   chapter: number;
   onChapterChange: (chapter: number) => void;
   maxChapter: number;
+  /** Active translation (lowercase code). Passed from parent so changes apply before profile refetch. */
+  bibleVersion: string;
 };
 
-export function BibleReader({ book, chapter, onChapterChange, maxChapter }: BibleReaderProps) {
-  const { user, profile } = useAuth();
+export function BibleReader({ book, chapter, onChapterChange, maxChapter, bibleVersion }: BibleReaderProps) {
+  const { user } = useAuth();
   const [verses, setVerses] = useState<Array<{ verse: number; text: string }>>([]);
   const [reference, setReference] = useState('');
   const [loading, setLoading] = useState(true);
+  const [translating, setTranslating] = useState(false);
   const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const lastSuccessRef = useRef<{ book: string; chapter: number; version: string } | null>(null);
 
   useEffect(() => {
-    console.log('BibleReader useEffect triggered:', { book, chapter });
     loadChapter();
+  }, [book, chapter, bibleVersion]);
+
+  useEffect(() => {
     loadBookmarks();
-  }, [book, chapter, profile]);
+  }, [book, chapter, user?.id]);
 
   const loadChapter = async () => {
-    setLoading(true);
-    setError(null);
+    const version = (bibleVersion?.toLowerCase().trim() || 'kjv') as any;
+    const snap = lastSuccessRef.current;
+    const versionOnlyChange = Boolean(
+      snap && snap.book === book && snap.chapter === chapter && snap.version !== version
+    );
 
-    const version = (profile?.preferred_bible_version?.toLowerCase() || 'kjv') as any;
-    console.log('Loading chapter:', { book, chapter, version });
+    setError(null);
+    if (versionOnlyChange) {
+      setTranslating(true);
+    } else {
+      setLoading(true);
+    }
 
     const data = await fetchChapter(book, chapter, version);
 
     if (data) {
-      console.log('Chapter loaded successfully:', data.reference, data.verses.length, 'verses');
       setVerses(data.verses);
-      setReference(data.reference);
+      setReference(`${getBookDisplayName(book, version)} ${chapter}`);
       setError(null);
+      lastSuccessRef.current = { book, chapter, version };
 
       if (user) {
         await supabase.from('profiles').update({
@@ -50,14 +64,16 @@ export function BibleReader({ book, chapter, onChapterChange, maxChapter }: Bibl
           last_read_chapter: chapter,
         }).eq('id', user.id);
       }
+    } else if (versionOnlyChange) {
+      setError('Unable to load this translation. Showing the previous text until you pick another version.');
     } else {
-      console.error('Failed to load chapter');
       setVerses([]);
-      setReference(`${book} ${chapter}`);
+      setReference(`${getBookDisplayName(book, version)} ${chapter}`);
       setError('Unable to load chapter. Please try again.');
     }
 
     setLoading(false);
+    setTranslating(false);
   };
 
   const loadBookmarks = async () => {
@@ -114,7 +130,17 @@ export function BibleReader({ book, chapter, onChapterChange, maxChapter }: Bibl
   }
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
+      {translating && (
+        <div
+          className="sticky top-0 z-20 flex items-center justify-center gap-2 border-b border-[#D4AF37]/20 bg-[#FDFCF8]/95 py-2 text-sm text-[#333333]/80 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#D4AF37]" />
+          Switching translation…
+        </div>
+      )}
       <div className="sticky top-0 z-10 bg-[#FDFCF8]/95 backdrop-blur-sm border-b border-[#D4AF37]/20 px-4 py-3">
         <div className="flex items-center justify-between max-w-3xl mx-auto">
           <Button

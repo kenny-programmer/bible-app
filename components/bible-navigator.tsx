@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { BIBLE_BOOKS, getBookDisplayName } from '@/lib/bible-data';
-import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -13,13 +12,14 @@ type BibleNavigatorProps = {
   currentBook: string;
   currentChapter: number;
   onNavigate: (book: string, chapter: number) => void;
+  /** Active translation (lowercase code), from parent `localBibleVersion`. */
+  bibleVersion: string;
 };
 
-export function BibleNavigator({ currentBook, currentChapter, onNavigate }: BibleNavigatorProps) {
-  const { profile } = useAuth();
+export function BibleNavigator({ currentBook, currentChapter, onNavigate, bibleVersion }: BibleNavigatorProps) {
   const [open, setOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState(currentBook);
-  const version = profile?.preferred_bible_version?.toLowerCase() || 'kjv';
+  const version = bibleVersion?.toLowerCase().trim() || 'kjv';
 
   useEffect(() => {
     if (open) {
@@ -48,19 +48,24 @@ export function BibleNavigator({ currentBook, currentChapter, onNavigate }: Bibl
           {currentDisplayName} {currentChapter}
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[85vh] bg-[#FDFCF8]">
-        <SheetHeader>
+      <SheetContent
+        side="bottom"
+        className="flex h-[85dvh] max-h-[85dvh] flex-col overflow-hidden bg-[#FDFCF8] sm:h-[85vh] sm:max-h-[85vh]"
+      >
+        <SheetHeader className="shrink-0">
           <SheetTitle className="text-[#333333] font-serif">
-            {version === 'tagalog' ? 'Pumili ng Aklat at Kabanata' : 'Select Book & Chapter'}
+            {version === 'tagalog' || version === 'asnd'
+              ? 'Pumili ng Aklat at Kabanata'
+              : 'Select Book & Chapter'}
           </SheetTitle>
         </SheetHeader>
 
-        <div className="grid grid-cols-2 gap-4 mt-6 h-[calc(100%-60px)]">
-          <div>
-            <h3 className="text-xs font-semibold text-[#333333]/70 uppercase tracking-wide mb-3">
-              {version === 'tagalog' ? 'Mga Aklat' : 'Books'}
+        <div className="grid min-h-0 flex-1 grid-cols-2 gap-4 pt-6">
+          <div className="flex min-h-0 flex-col">
+            <h3 className="mb-3 shrink-0 text-xs font-semibold uppercase tracking-wide text-[#333333]/70">
+              {version === 'tagalog' || version === 'asnd' ? 'Mga Aklat' : 'Books'}
             </h3>
-            <ScrollArea className="h-[calc(100%-30px)]">
+            <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-1 pr-4">
                 {BIBLE_BOOKS.map((book) => {
                   const displayName = getBookDisplayName(book.name, version);
@@ -83,11 +88,11 @@ export function BibleNavigator({ currentBook, currentChapter, onNavigate }: Bibl
             </ScrollArea>
           </div>
 
-          <div>
-            <h3 className="text-xs font-semibold text-[#333333]/70 uppercase tracking-wide mb-3">
-              {version === 'tagalog' ? 'Mga Kabanata' : 'Chapters'} ({selectedBookData?.chapters || 0})
+          <div className="flex min-h-0 flex-col">
+            <h3 className="mb-3 shrink-0 text-xs font-semibold uppercase tracking-wide text-[#333333]/70">
+              {`${version === 'tagalog' || version === 'asnd' ? 'Mga Kabanata' : 'Chapters'} (${selectedBookData?.chapters ?? 0})`}
             </h3>
-            <ScrollArea className="h-[calc(100%-30px)]">
+            <ScrollArea className="min-h-0 flex-1">
               <div className="grid grid-cols-4 gap-2 pr-4">
                 {Array.from({ length: selectedBookData?.chapters || 0 }, (_, i) => i + 1).map((ch) => (
                   <Button

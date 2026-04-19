@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from './supabase-client';
 import { Profile } from './supabase';
@@ -25,16 +25,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  /** Ignore stale profile responses when multiple fetches overlap (e.g. refresh + token refresh). */
+  const profileFetchGeneration = useRef(0);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
+  const fetchProfile = useCallback(async (userId: string) => {
+    const generation = ++profileFetchGeneration.current;
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
 
+    if (generation !== profileFetchGeneration.current) {
+      return;
+    }
+    if (error) {
+      console.error('Failed to load profile:', error);
+    }
     setProfile(data);
-  };
+  }, []);
 
   const refreshProfile = async () => {
     if (user) {
@@ -43,30 +52,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let cancelled = false;
+
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
       }
-      setLoading(false);
-    });
+      if (!cancelled) setLoading(false);
+    })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
+      void (async () => {
         setUser(session?.user ?? null);
         if (session?.user) {
           await fetchProfile(session.user.id);
         } else {
+          profileFetchGeneration.current += 1;
           setProfile(null);
         }
         setLoading(false);
       })();
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      cancelled = true;
+      profileFetchGeneration.current += 1;
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile]);
 
   const signOut = async () => {
+    profileFetchGeneration.current += 1;
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);

@@ -1,4 +1,4 @@
-type BibleVersion = 'kjv' | 'web' | 'bsb' | 'asv' | 'bbe' | 'clementine' | 'darby' | 'dra' | 'rva' | 'ylt' | 'tagalog';
+import type { BibleVersion } from '@/lib/bible-data';
 
 const SUPPORTED_BIBLE_API_VERSIONS = ['kjv', 'web', 'bsb', 'asv', 'bbe', 'clementine', 'darby', 'ylt'];
 
@@ -76,6 +76,50 @@ async function fetchTagalogChapter(book: string, chapter: number): Promise<{ ver
   }
 }
 
+async function fetchAsndChapter(
+  book: string,
+  chapter: number
+): Promise<{ verses: Array<{ verse: number; text: string }>; reference: string } | null> {
+  try {
+    const params = new URLSearchParams({
+      version: 'asnd',
+      book,
+      chapter: String(chapter),
+    });
+    const response = await fetch(`/api/bible/scripture?${params}`, { cache: 'no-store' });
+    if (!response.ok) {
+      console.error('ASND chapter fetch failed:', response.status);
+      return null;
+    }
+    const data = await response.json();
+    if (!data.verses || !Array.isArray(data.verses)) return null;
+    return {
+      verses: data.verses,
+      reference: typeof data.reference === 'string' ? data.reference : `${book} ${chapter}`,
+    };
+  } catch (error) {
+    console.error('ASND chapter API error:', error);
+    return null;
+  }
+}
+
+async function fetchAsndVerse(reference: string): Promise<{ text: string; reference: string } | null> {
+  try {
+    const params = new URLSearchParams({
+      version: 'asnd',
+      reference: reference.trim(),
+    });
+    const response = await fetch(`/api/bible/scripture?${params}`, { cache: 'no-store' });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (typeof data.text !== 'string') return null;
+    return { text: data.text, reference: data.reference ?? reference };
+  } catch (error) {
+    console.error('ASND verse API error:', error);
+    return null;
+  }
+}
+
 function getVersionForBibleAPI(version: string): string {
   const normalized = version.toLowerCase();
 
@@ -95,6 +139,10 @@ export async function fetchChapter(book: string, chapter: number, version: Bible
 
   if (normalized === 'tagalog') {
     return fetchTagalogChapter(book, chapter);
+  }
+
+  if (normalized === 'asnd') {
+    return fetchAsndChapter(book, chapter);
   }
 
   try {
@@ -191,6 +239,10 @@ export async function fetchVerse(reference: string, version: BibleVersion = 'kjv
 
   if (normalized === 'tagalog') {
     return fetchTagalogVerse(reference);
+  }
+
+  if (normalized === 'asnd') {
+    return fetchAsndVerse(reference);
   }
 
   try {

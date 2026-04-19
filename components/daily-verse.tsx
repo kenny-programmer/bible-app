@@ -1,21 +1,37 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchRandomVerse } from '@/lib/bible-api';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { Sparkles, Loader as Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-export function DailyVerse() {
+type DailyVerseProps = {
+  /** When set, overrides profile for translation (keeps daily verse in sync with Settings). */
+  bibleVersion?: string;
+};
+
+export function DailyVerse({ bibleVersion }: DailyVerseProps) {
   const { user, profile } = useAuth();
   const [verse, setVerse] = useState<{ text: string; reference: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
+  // Only re-check "once per day" when the signed-in user changes. Translation changes
+  // must not re-run this effect or Daily Bread re-opens and stacks over Settings.
+  const versionPrefsRef = useRef({
+    bibleVersion,
+    profileVersion: profile?.preferred_bible_version,
+  });
+  versionPrefsRef.current = {
+    bibleVersion,
+    profileVersion: profile?.preferred_bible_version,
+  };
+
   useEffect(() => {
     const checkAndLoadVerse = async () => {
-      if (!user) return;
+      if (!user?.id) return;
 
       const today = new Date().toISOString().split('T')[0];
 
@@ -32,7 +48,9 @@ export function DailyVerse() {
       }
 
       setLoading(true);
-      const version = (profile?.preferred_bible_version?.toLowerCase() || 'kjv') as any;
+      const { bibleVersion: bv, profileVersion: pv } = versionPrefsRef.current;
+      const raw = bv ?? pv;
+      const version = (raw?.toLowerCase()?.trim() || 'kjv') as any;
       try {
         const verseData = await fetchRandomVerse(version);
         setVerse(verseData);
@@ -45,7 +63,7 @@ export function DailyVerse() {
     };
 
     checkAndLoadVerse();
-  }, [user, profile]);
+  }, [user?.id]);
 
   const handleClose = async () => {
     if (!user) return;
