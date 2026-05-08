@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { bookNameToUsfm, chapterId } from '@/lib/book-usfm';
+import { christSegmentsFromApiBibleHtml } from '@/lib/scripture-html-red-letter';
+import type { ChristWordSegment } from '@/lib/bible-red-letter';
+
+type ScriptureVerseRow = { verse: number; text: string; christSegments?: ChristWordSegment[] };
 
 const SCRIPTURE_BASE = 'https://api.scripture.api.bible/v1';
 
@@ -31,9 +35,16 @@ function verseNumberFromVerseId(id: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function verseRowFromSlice(slice: string, verseNum: number): ScriptureVerseRow {
+  const christSegments = christSegmentsFromApiBibleHtml(slice) ?? undefined;
+  const row: ScriptureVerseRow = { verse: verseNum, text: stripHtml(slice) };
+  if (christSegments?.length) row.christSegments = christSegments;
+  return row;
+}
+
 /** Parse API.Bible chapter HTML into verse segments (best-effort; formats vary). */
-function parseVersesFromChapterHtml(html: string): { verse: number; text: string }[] {
-  const out: { verse: number; text: string }[] = [];
+function parseVersesFromChapterHtml(html: string): ScriptureVerseRow[] {
+  const out: ScriptureVerseRow[] = [];
 
   // Pattern A: ...3.16 style ids in attributes
   const idRe = /data-id="([A-Z0-9]+)\.(\d+)\.(\d+)"/gi;
@@ -49,7 +60,7 @@ function parseVersesFromChapterHtml(html: string): { verse: number; text: string
       const start = markers[i].index;
       const end = i + 1 < markers.length ? markers[i + 1].index : html.length;
       const slice = html.slice(start, end);
-      out.push({ verse: markers[i].verse, text: stripHtml(slice) });
+      out.push(verseRowFromSlice(slice, markers[i].verse));
     }
     return out;
   }
@@ -66,7 +77,7 @@ function parseVersesFromChapterHtml(html: string): { verse: number; text: string
       const start = spans[i].index;
       const end = i + 1 < spans.length ? spans[i + 1].index : html.length;
       const slice = html.slice(start, end);
-      out.push({ verse: spans[i].verse, text: stripHtml(slice) });
+      out.push(verseRowFromSlice(slice, spans[i].verse));
     }
     return out;
   }
@@ -83,13 +94,18 @@ function parseVersesFromChapterHtml(html: string): { verse: number; text: string
       const start = sups[i].index;
       const end = i + 1 < sups.length ? sups[i + 1].index : html.length;
       const slice = html.slice(start, end);
-      out.push({ verse: sups[i].verse, text: stripHtml(slice) });
+      out.push(verseRowFromSlice(slice, sups[i].verse));
     }
     return out;
   }
 
   const plain = stripHtml(html);
-  if (plain) out.push({ verse: 1, text: plain });
+  if (plain) {
+    const christSegments = christSegmentsFromApiBibleHtml(html);
+    const row: ScriptureVerseRow = { verse: 1, text: plain };
+    if (christSegments?.length) row.christSegments = christSegments;
+    out.push(row);
+  }
   return out;
 }
 
@@ -170,14 +186,14 @@ async function fetchVersesFromChapterList(
   bibleId: string,
   cid: string,
   apiKey: string
-): Promise<{ verse: number; text: string }[] | null> {
+): Promise<ScriptureVerseRow[] | null> {
   const res = await scriptureFetch(`/bibles/${bibleId}/chapters/${encodeURIComponent(cid)}/verses`, apiKey);
   if (!res.ok) return null;
   const json = await res.json();
   const rows = Array.isArray(json.data) ? json.data : [];
   if (rows.length === 0) return null;
 
-  const parsed: { verse: number; text: string }[] = [];
+  const parsed: ScriptureVerseRow[] = [];
   for (const row of rows) {
     const id = typeof row.id === 'string' ? row.id : '';
     const vn = verseNumberFromVerseId(id);
@@ -191,14 +207,18 @@ async function fetchVersesFromChapterList(
       parsed.length = 0;
       break;
     }
-    parsed.push({ verse: vn, text: stripHtml(raw) });
+    const fromWj = christSegmentsFromApiBibleHtml(raw) ?? undefined;
+    const rowWithSeg: ScriptureVerseRow =
+      fromWj?.length ? { verse: vn, text: stripHtml(raw), christSegments: fromWj }
+      : { verse: vn, text: stripHtml(raw) };
+    parsed.push(rowWithSeg);
   }
   if (parsed.length === rows.length && parsed.length > 0) return parsed;
 
   // Per-verse fetch when list has ids only (rare; slower)
   if (rows.length > 0 && rows.every((r: { id?: string }) => typeof r.id === 'string')) {
     const batchSize = 24;
-    const acc: { verse: number; text: string }[] = [];
+    const acc: ScriptureVerseRow[] = [];
     for (let i = 0; i < rows.length; i += batchSize) {
       const chunk = rows.slice(i, i + batchSize);
       const settled = await Promise.all(
@@ -212,7 +232,12 @@ async function fetchVersesFromChapterList(
           const vn = verseNumberFromVerseId(row.id);
           if (vn == null) return null;
           const raw = typeof j.data?.content === 'string' ? j.data.content : '';
-          return { verse: vn, text: stripHtml(raw) };
+          if (!raw) return null;
+          const fromWj = christSegmentsFromApiBibleHtml(raw) ?? undefined;
+          return (
+            fromWj?.length ? { verse: vn, text: stripHtml(raw), christSegments: fromWj }
+            : { verse: vn, text: stripHtml(raw) }
+          );
         })
       );
       for (const item of settled) {
@@ -229,7 +254,7 @@ async function fetchChapterFromHtml(
   bibleId: string,
   cid: string,
   apiKey: string
-): Promise<{ verse: number; text: string }[] | null> {
+): Promise<ScriptureVerseRow[] | null> {
   const res = await scriptureFetch(`/bibles/${bibleId}/chapters/${encodeURIComponent(cid)}`, apiKey);
   if (!res.ok) return null;
   const json = await res.json();

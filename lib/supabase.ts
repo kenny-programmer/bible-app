@@ -38,3 +38,14 @@ export type Message = {
   bible_verse_reference: string | null;
   created_at: string;
 };
+
+export type Highlight = {
+  id: string;
+  user_id: string;
+  book: string;
+  chapter: number;
+  verse: number;
+  color: string;
+  created_at: string;
+  updated_at: string;
+};

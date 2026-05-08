@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase-client';
 import { Loader as Loader2, LogOut, MessageCircle, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 const ALLOWED_BIBLE_VERSIONS = new Set(BIBLE_VERSIONS.map((v) => v.value));
 
@@ -26,6 +27,8 @@ export default function HomePage() {
   const [currentBook, setCurrentBook] = useState("John");
   const [currentChapter, setCurrentChapter] = useState(1);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [aiPrefill, setAiPrefill] = useState<string | null>(null);
+  const [readerSelectionCount, setReaderSelectionCount] = useState(0);
   /** Controlled select must not use only server value or the UI snaps back before Supabase finishes. */
   const [localBibleVersion, setLocalBibleVersion] = useState('kjv');
   /** Only seed `localBibleVersion` from Supabase once per login — never on every profile refetch (stale reads reset you to KJV). */
@@ -205,19 +208,33 @@ export default function HomePage() {
 
       <DailyVerse bibleVersion={localBibleVersion} />
 
-      <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-smooth pb-[max(12rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))] [-webkit-overflow-scrolling:touch] md:pb-10">
+      <main
+        className={cn(
+          "min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-smooth [-webkit-overflow-scrolling:touch] md:pb-10",
+          readerSelectionCount > 0
+            ? "pb-[calc(19rem+env(safe-area-inset-bottom,0px))]"
+            : "pb-[max(12rem,calc(6.5rem+env(safe-area-inset-bottom,0px)))]"
+        )}
+      >
         <BibleReader
           book={currentBook}
           chapter={currentChapter}
           onChapterChange={handleChapterChange}
           maxChapter={currentBookData?.chapters || 1}
           bibleVersion={localBibleVersion}
+          onSelectionChange={setReaderSelectionCount}
+          onAddToAI={(text) => {
+            setAiPrefill(text);
+            setAiAssistantOpen(true);
+          }}
         />
       </main>
 
       <AIAssistant
         open={aiAssistantOpen}
         onOpenChange={setAiAssistantOpen}
+        prefillText={aiPrefill}
+        hideComposerButton={readerSelectionCount > 0}
       />
     </div>
   );

@@ -1,0 +1,349 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1B000000000000000000001 /* SpiritualStudyBuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000001 /* SpiritualStudyBuddyApp.swift */; };
+		A1B000000000000000000002 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000002 /* RootView.swift */; };
+		A1B000000000000000000003 /* AppSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000003 /* AppSession.swift */; };
+		A1B000000000000000000004 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000004 /* AppConfig.swift */; };
+		A1B000000000000000000005 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000005 /* Theme.swift */; };
+		A1B000000000000000000006 /* BibleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000006 /* BibleData.swift */; };
+		A1B000000000000000000007 /* BookUSFM.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000007 /* BookUSFM.swift */; };
+		A1B000000000000000000008 /* BibleAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000008 /* BibleAPIService.swift */; };
+		A1B000000000000000000009 /* ScriptureASNDService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000009 /* ScriptureASNDService.swift */; };
+		A1B00000000000000000000A /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A00000000000000000000A /* AuthView.swift */; };
+		A1B00000000000000000000B /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A00000000000000000000B /* HomeView.swift */; };
+		A1B00000000000000000000C /* BibleReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A00000000000000000000C /* BibleReaderView.swift */; };
+		A1B00000000000000000000D /* BibleNavigatorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A00000000000000000000D /* BibleNavigatorSheet.swift */; };
+		A1B00000000000000000000E /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A00000000000000000000E /* SettingsSheet.swift */; };
+		A1B00000000000000000000F /* AIAssistantSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A00000000000000000000F /* AIAssistantSheet.swift */; };
+		A1B000000000000000000010 /* AppleIntelligenceBibleChat.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000010 /* AppleIntelligenceBibleChat.swift */; };
+		A1B000000000000000000011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A0A000000000000000000011 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A0A000000000000000000001 /* SpiritualStudyBuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiritualStudyBuddyApp.swift; sourceTree = "<group>"; };
+		A0A000000000000000000002 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		A0A000000000000000000003 /* AppSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSession.swift; sourceTree = "<group>"; };
+		A0A000000000000000000004 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		A0A000000000000000000005 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		A0A000000000000000000006 /* BibleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleData.swift; sourceTree = "<group>"; };
+		A0A000000000000000000007 /* BookUSFM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookUSFM.swift; sourceTree = "<group>"; };
+		A0A000000000000000000008 /* BibleAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleAPIService.swift; sourceTree = "<group>"; };
+		A0A000000000000000000009 /* ScriptureASNDService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureASNDService.swift; sourceTree = "<group>"; };
+		A0A00000000000000000000A /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		A0A00000000000000000000B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A0A00000000000000000000C /* BibleReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleReaderView.swift; sourceTree = "<group>"; };
+		A0A00000000000000000000D /* BibleNavigatorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleNavigatorSheet.swift; sourceTree = "<group>"; };
+		A0A00000000000000000000E /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
+		A0A00000000000000000000F /* AIAssistantSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAssistantSheet.swift; sourceTree = "<group>"; };
+		A0A000000000000000000010 /* AppleIntelligenceBibleChat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligenceBibleChat.swift; sourceTree = "<group>"; };
+		A0A000000000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A0A000000000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A0A000000000000000000020 /* SpiritualStudyBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpiritualStudyBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1C000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1D000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A1D000000000000000000002 /* SpiritualStudyBuddy */,
+				A1D000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1D000000000000000000002 /* SpiritualStudyBuddy */ = {
+			isa = PBXGroup;
+			children = (
+				A0A000000000000000000012 /* Info.plist */,
+				A0A000000000000000000011 /* Assets.xcassets */,
+				A0A000000000000000000001 /* SpiritualStudyBuddyApp.swift */,
+				A0A000000000000000000002 /* RootView.swift */,
+				A0A000000000000000000003 /* AppSession.swift */,
+				A0A000000000000000000004 /* AppConfig.swift */,
+				A0A000000000000000000005 /* Theme.swift */,
+				A0A000000000000000000006 /* BibleData.swift */,
+				A0A000000000000000000007 /* BookUSFM.swift */,
+				A0A000000000000000000008 /* BibleAPIService.swift */,
+				A0A000000000000000000009 /* ScriptureASNDService.swift */,
+				A0A00000000000000000000A /* AuthView.swift */,
+				A0A00000000000000000000B /* HomeView.swift */,
+				A0A00000000000000000000C /* BibleReaderView.swift */,
+				A0A00000000000000000000D /* BibleNavigatorSheet.swift */,
+				A0A00000000000000000000E /* SettingsSheet.swift */,
+				A0A00000000000000000000F /* AIAssistantSheet.swift */,
+				A0A000000000000000000010 /* AppleIntelligenceBibleChat.swift */,
+			);
+			path = SpiritualStudyBuddy;
+			sourceTree = "<group>";
+		};
+		A1D000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A0A000000000000000000020 /* SpiritualStudyBuddy.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1E000000000000000000001 /* SpiritualStudyBuddy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1F000000000000000000002 /* Build configuration list for PBXNativeTarget "SpiritualStudyBuddy" */;
+			buildPhases = (
+				A1E000000000000000000002 /* Sources */,
+				A1C000000000000000000001 /* Frameworks */,
+				A1E000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SpiritualStudyBuddy;
+			packageProductDependencies = (
+				A1G000000000000000000001 /* Supabase */,
+			);
+			productName = SpiritualStudyBuddy;
+			productReference = A0A000000000000000000020 /* SpiritualStudyBuddy.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1F000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					A1E000000000000000000001 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+				};
+			};
+			buildConfigurationList = A1F000000000000000000003 /* Build configuration list for PBXProject "SpiritualStudyBuddy" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A1D000000000000000000001;
+			packageReferences = (
+				A1G000000000000000000002 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			productRefGroup = A1D000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1E000000000000000000001 /* SpiritualStudyBuddy */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1E000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B000000000000000000011 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1E000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B000000000000000000001 /* SpiritualStudyBuddyApp.swift in Sources */,
+				A1B000000000000000000002 /* RootView.swift in Sources */,
+				A1B000000000000000000003 /* AppSession.swift in Sources */,
+				A1B000000000000000000004 /* AppConfig.swift in Sources */,
+				A1B000000000000000000005 /* Theme.swift in Sources */,
+				A1B000000000000000000006 /* BibleData.swift in Sources */,
+				A1B000000000000000000007 /* BookUSFM.swift in Sources */,
+				A1B000000000000000000008 /* BibleAPIService.swift in Sources */,
+				A1B000000000000000000009 /* ScriptureASNDService.swift in Sources */,
+				A1B00000000000000000000A /* AuthView.swift in Sources */,
+				A1B00000000000000000000B /* HomeView.swift in Sources */,
+				A1B00000000000000000000C /* BibleReaderView.swift in Sources */,
+				A1B00000000000000000000D /* BibleNavigatorSheet.swift in Sources */,
+				A1B00000000000000000000E /* SettingsSheet.swift in Sources */,
+				A1B00000000000000000000F /* AIAssistantSheet.swift in Sources */,
+				A1B000000000000000000010 /* AppleIntelligenceBibleChat.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A2A000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A2A000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A2A000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SpiritualStudyBuddy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Spiritual Study Buddy";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.SpiritualStudyBuddy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A2A000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SpiritualStudyBuddy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Spiritual Study Buddy";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.SpiritualStudyBuddy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1F000000000000000000003 /* Build configuration list for PBXProject "SpiritualStudyBuddy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A2A000000000000000000001 /* Debug */,
+				A2A000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1F000000000000000000002 /* Build configuration list for PBXNativeTarget "SpiritualStudyBuddy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A2A000000000000000000003 /* Debug */,
+				A2A000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A1G000000000000000000002 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1G000000000000000000001 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1G000000000000000000002 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A1F000000000000000000001 /* Project object */;
+}

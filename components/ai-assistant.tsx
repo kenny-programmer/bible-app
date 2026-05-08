@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle, Send, Loader as Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { AssistantMessageMarkdown } from "@/components/assistant-message-markdown";
 
 type Message = {
   role: "user" | "assistant";
@@ -16,9 +17,17 @@ type Message = {
 type AIAssistantProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prefillText?: string | null;
+  /** Hide the floating “AI Chat” button (e.g. while the Bible verse selection bar is open). */
+  hideComposerButton?: boolean;
 };
 
-export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
+export function AIAssistant({
+  open,
+  onOpenChange,
+  prefillText,
+  hideComposerButton,
+}: AIAssistantProps) {
   const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -26,6 +35,12 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
   const { toast } = useToast();
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!prefillText) return;
+    setInput((prev) => (prev.trim().length ? prev : prefillText));
+  }, [open, prefillText]);
 
   /** Mobile Safari: `fixed` + small `bottom` uses the *layout* viewport, which extends below the visible area—FAB gets clipped. Align to the visual viewport instead. */
   /** Smaller `bottom` = pill sits lower (closer to the home indicator). Floor kept minimal so it doesn’t hover mid-screen. */
@@ -198,9 +213,13 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
                               : "border-2 border-[#D4AF37]/10 bg-white text-[#333333] shadow-sm"
                           }`}
                         >
-                          <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-                            {message.content}
-                          </p>
+                          {message.role === "assistant" ? (
+                            <AssistantMessageMarkdown content={message.content} />
+                          ) : (
+                            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
+                              {message.content}
+                            </p>
+                          )}
                         </div>
                       </motion.div>
                     ))}
@@ -223,22 +242,36 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
               </div>
 
               <div className="border-t border-[#D4AF37]/20 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
-                <form onSubmit={handleSubmit} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask your question..."
-                    className="min-w-0 flex-1 rounded-lg border border-[#D4AF37]/30 px-3 py-2.5 text-[15px] text-[#333333] placeholder:text-[#333333]/40 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/35"
-                    disabled={loading}
-                    enterKeyHint="send"
-                    autoComplete="off"
-                  />
+                <form onSubmit={handleSubmit} className="flex items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter") return;
+                        if (e.shiftKey) return;
+                        e.preventDefault();
+                        const form = e.currentTarget.closest("form");
+                        if (!form || loading || !input.trim()) return;
+                        form.requestSubmit();
+                      }}
+                      placeholder="Ask…"
+                      aria-label="Message"
+                      aria-describedby="ai-composer-hint"
+                      rows={2}
+                      className="min-h-[44px] w-full max-h-36 resize-y rounded-lg border border-[#D4AF37]/30 px-3 py-2.5 text-[15px] leading-relaxed text-[#333333] placeholder:text-[#333333]/40 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/35"
+                      disabled={loading}
+                      autoComplete="off"
+                    />
+                    <p id="ai-composer-hint" className="mt-1 text-[11px] text-[#333333]/45">
+                      Enter to send · Shift+Enter new line
+                    </p>
+                  </div>
                   <Button
                     type="submit"
                     disabled={loading || !input.trim()}
                     size="sm"
-                    className="h-10 flex-shrink-0 bg-[#D4AF37] px-4 hover:bg-[#D4AF37]/90"
+                    className="h-[44px] min-h-[44px] flex-shrink-0 self-end bg-[#D4AF37] px-4 hover:bg-[#D4AF37]/90"
                   >
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -254,7 +287,7 @@ export function AIAssistant({ open, onOpenChange }: AIAssistantProps) {
         )}
       </AnimatePresence>
 
-      {!open && (
+      {!open && !hideComposerButton && (
         <Button
           type="button"
           size="lg"

@@ -73,8 +73,7 @@ npm install
 
 3. Set up your Supabase database
    - Create a new Supabase project
-   - Follow the instructions in `DATABASE_SETUP.md` to set up all tables
-   - Run the SQL migrations in order (Step 1, then Step 2)
+   - Run the migrations (single command) in `DATABASE_SETUP.md`
 
 4. Configure environment variables
    - Copy `.env.example` to `.env` (or create a new `.env` file)
@@ -94,7 +93,7 @@ npm install
 6. Deploy the Edge Function
    - The chat edge function is located at `supabase/functions/chat/index.ts`
    - Deploy it to your Supabase project
-   - See `DATABASE_SETUP.md` for more details
+   - See `DATABASE_SETUP.md` (includes required secrets)
 
 7. Run the development server
 ```bash
@@ -105,13 +104,7 @@ npm run dev
 
 ## Database Setup
 
-The application uses Supabase for data persistence. See `DATABASE_SETUP.md` for detailed setup instructions, including:
-
-- Complete SQL schema with all tables
-- Row Level Security policies
-- Automatic profile creation triggers
-- Edge Function configuration
-- Environment variables setup
+The application uses Supabase for data persistence. See `DATABASE_SETUP.md` for the single migration command and required secrets.
 
 ### Database Tables
 

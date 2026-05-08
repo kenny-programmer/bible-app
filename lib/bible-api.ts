@@ -1,85 +1,18 @@
 import type { BibleVersion } from '@/lib/bible-data';
 
-const SUPPORTED_BIBLE_API_VERSIONS = ['kjv', 'web', 'bsb', 'asv', 'bbe', 'clementine', 'darby', 'ylt'];
-
-const BOOK_ID_MAP: Record<string, string> = {
-  'Genesis': '01', 'Exodus': '02', 'Leviticus': '03', 'Numbers': '04', 'Deuteronomy': '05',
-  'Joshua': '06', 'Judges': '07', 'Ruth': '08', '1 Samuel': '09', '2 Samuel': '10',
-  '1 Kings': '11', '2 Kings': '12', '1 Chronicles': '13', '2 Chronicles': '14', 'Ezra': '15',
-  'Nehemiah': '16', 'Esther': '17', 'Job': '18', 'Psalms': '19', 'Proverbs': '20',
-  'Ecclesiastes': '21', 'Song of Solomon': '22', 'Isaiah': '23', 'Jeremiah': '24',
-  'Lamentations': '25', 'Ezekiel': '26', 'Daniel': '27', 'Hosea': '28', 'Joel': '29',
-  'Amos': '30', 'Obadiah': '31', 'Jonah': '32', 'Micah': '33', 'Nahum': '34',
-  'Habakkuk': '35', 'Zephaniah': '36', 'Haggai': '37', 'Zechariah': '38', 'Malachi': '39',
-  'Matthew': '40', 'Mark': '41', 'Luke': '42', 'John': '43', 'Acts': '44',
-  'Romans': '45', '1 Corinthians': '46', '2 Corinthians': '47', 'Galatians': '48',
-  'Ephesians': '49', 'Philippians': '50', 'Colossians': '51', '1 Thessalonians': '52',
-  '2 Thessalonians': '53', '1 Timothy': '54', '2 Timothy': '55', 'Titus': '56',
-  'Philemon': '57', 'Hebrews': '58', 'James': '59', '1 Peter': '60', '2 Peter': '61',
-  '1 John': '62', '2 John': '63', '3 John': '64', 'Jude': '65', 'Revelation': '66'
+/** Optional red-letter runs (matches `ChristWordSegment` in bible-red-letter.ts; kept local to avoid circular imports). */
+export type BibleChapterVerse = {
+  verse: number;
+  text: string;
+  christSegments?: Array<{ text: string; wordsOfChrist: boolean }>;
 };
 
-async function fetchTagalogChapter(book: string, chapter: number): Promise<{ verses: Array<{ verse: number; text: string }>; reference: string } | null> {
-  try {
-    const bookNumber = parseInt(BOOK_ID_MAP[book]);
-    if (!bookNumber) {
-      console.error('Unknown book for Tagalog:', book);
-      return null;
-    }
-
-    const url = `https://api.getbible.net/v2/tagalog.json`;
-    console.log('Fetching Tagalog Bible:', { book, chapter, bookNumber });
-
-    const response = await fetch(url, {
-      cache: 'force-cache',
-      headers: {
-        'Accept': 'application/json',
-      }
-    });
-
-    if (!response.ok) {
-      console.error('Failed to fetch Tagalog Bible:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-
-    if (!data.books || !Array.isArray(data.books)) {
-      console.error('Invalid Tagalog Bible response structure');
-      return null;
-    }
-
-    const targetBook = data.books.find((b: any) => b.nr === bookNumber);
-    if (!targetBook || !targetBook.chapters) {
-      console.error('Book not found in Tagalog Bible:', bookNumber);
-      return null;
-    }
-
-    const targetChapter = targetBook.chapters.find((c: any) => c.chapter === chapter);
-    if (!targetChapter || !targetChapter.verses) {
-      console.error('Chapter not found in Tagalog Bible:', chapter);
-      return null;
-    }
-
-    const verses = targetChapter.verses.map((v: any) => ({
-      verse: v.verse,
-      text: v.text || '',
-    }));
-
-    return {
-      verses,
-      reference: `${book} ${chapter}`,
-    };
-  } catch (error) {
-    console.error('Tagalog Bible API Error:', error);
-    return null;
-  }
-}
+export { getVersionForBibleAPI } from '@/lib/bible-api-version';
 
 async function fetchAsndChapter(
   book: string,
   chapter: number
-): Promise<{ verses: Array<{ verse: number; text: string }>; reference: string } | null> {
+): Promise<{ verses: BibleChapterVerse[]; reference: string } | null> {
   try {
     const params = new URLSearchParams({
       version: 'asnd',
@@ -94,7 +27,20 @@ async function fetchAsndChapter(
     const data = await response.json();
     if (!data.verses || !Array.isArray(data.verses)) return null;
     return {
-      verses: data.verses,
+      verses: data.verses.map((vv: Record<string, unknown>) => ({
+        verse: Number(vv.verse),
+        text: typeof vv.text === 'string' ? vv.text.trim() : String(vv.text ?? ''),
+        christSegments:
+          Array.isArray(vv.christSegments) ?
+            vv.christSegments.filter(
+              (s): s is { text: string; wordsOfChrist: boolean } =>
+                Boolean(s && typeof (s as { text?: unknown }).text === 'string')
+            ).map((s) => ({
+              text: (s as { text: string }).text,
+              wordsOfChrist: Boolean((s as { wordsOfChrist?: unknown }).wordsOfChrist),
+            }))
+          : undefined,
+      })),
       reference: typeof data.reference === 'string' ? data.reference : `${book} ${chapter}`,
     };
   } catch (error) {
@@ -120,84 +66,40 @@ async function fetchAsndVerse(reference: string): Promise<{ text: string; refere
   }
 }
 
-function getVersionForBibleAPI(version: string): string {
+export async function fetchChapter(
+  book: string,
+  chapter: number,
+  version: BibleVersion = 'kjv'
+): Promise<{ verses: BibleChapterVerse[]; reference: string } | null> {
   const normalized = version.toLowerCase();
-
-  if (normalized === 'dra') {
-    return 'clementine';
-  }
-
-  if (normalized === 'rva') {
-    return 'kjv';
-  }
-
-  return SUPPORTED_BIBLE_API_VERSIONS.includes(normalized) ? normalized : 'kjv';
-}
-
-export async function fetchChapter(book: string, chapter: number, version: BibleVersion = 'kjv'): Promise<{ verses: Array<{ verse: number; text: string }>; reference: string } | null> {
-  const normalized = version.toLowerCase();
-
-  if (normalized === 'tagalog') {
-    return fetchTagalogChapter(book, chapter);
-  }
 
   if (normalized === 'asnd') {
     return fetchAsndChapter(book, chapter);
   }
 
   try {
-    const apiVersion = getVersionForBibleAPI(version);
-    const formattedBook = book.replace(/\s+/g, '+');
-    const url = `https://bible-api.com/${formattedBook}+${chapter}?translation=${apiVersion}`;
+    if (typeof window === 'undefined') {
+      const { fetchChapterFromUpstream } = await import('./bible-chapter-fetch');
+      return fetchChapterFromUpstream(book, chapter, normalized);
+    }
 
-    console.log('Fetching chapter:', { book, chapter, requestedVersion: version, apiVersion, url });
-
-    const response = await fetch(url, {
-      cache: 'no-store',
-      headers: {
-        'Accept': 'application/json',
-      }
+    const qs = new URLSearchParams({
+      book,
+      chapter: String(chapter),
+      version: normalized,
     });
+    const res = await fetch(`/api/bible/chapter?${qs}`, { cache: 'no-store' });
+    if (!res.ok) return null;
 
-    console.log('Response status:', response.status);
+    const json = (await res.json()) as Record<string, unknown>;
+    if (json.error != null || !Array.isArray(json.verses)) return null;
 
-    if (!response.ok) {
-      console.error('Failed to fetch chapter:', response.status, response.statusText);
-
-      if (apiVersion !== 'kjv') {
-        console.log('Retrying with KJV fallback');
-        return fetchChapter(book, chapter, 'kjv');
-      }
-
-      return null;
-    }
-
-    const data = await response.json();
-    console.log('Received data:', data);
-
-    if (data.verses && Array.isArray(data.verses)) {
-      return {
-        verses: data.verses.map((v: any) => ({
-          verse: v.verse,
-          text: v.text.trim(),
-        })),
-        reference: data.reference,
-      };
-    }
-
-    const verseNumber = data.verse || 1;
     return {
-      verses: [{ verse: verseNumber, text: data.text.trim() }],
-      reference: data.reference,
+      verses: json.verses as BibleChapterVerse[],
+      reference: String(json.reference ?? `${book} ${chapter}`),
     };
   } catch (error) {
-    console.error('Bible API Error:', error);
-
-    if (version !== 'kjv') {
-      console.log('Retrying with KJV fallback after error');
-      return fetchChapter(book, chapter, 'kjv');
-    }
-
+    console.error('Bible chapter fetch:', error);
     return null;
   }
 }
@@ -213,7 +115,7 @@ async function fetchTagalogVerse(reference: string): Promise<{ text: string; ref
     const [, bookName, chapterNum, startVerse, endVerse] = match;
     const chapter = parseInt(chapterNum);
 
-    const chapterData = await fetchTagalogChapter(bookName.trim(), chapter);
+    const chapterData = await fetchChapter(bookName.trim(), chapter, 'tagalog');
     if (!chapterData) return null;
 
     const start = parseInt(startVerse);
@@ -246,30 +148,26 @@ export async function fetchVerse(reference: string, version: BibleVersion = 'kjv
   }
 
   try {
-    const apiVersion = getVersionForBibleAPI(version);
-    const formattedRef = reference.replace(/\s+/g, '+');
-    const url = `https://bible-api.com/${formattedRef}?translation=${apiVersion}`;
-
-    const response = await fetch(url, { cache: 'no-store' });
-
-    if (!response.ok) {
-      if (apiVersion !== 'kjv') {
-        return fetchVerse(reference, 'kjv');
-      }
-      return null;
+    if (typeof window === 'undefined') {
+      const { fetchVerseFromUpstream } = await import('./bible-chapter-fetch');
+      return fetchVerseFromUpstream(reference, normalized);
     }
 
-    const data = await response.json();
+    const qs = new URLSearchParams({
+      reference: reference.trim(),
+      version: normalized,
+    });
+    const res = await fetch(`/api/bible/verse?${qs}`, { cache: 'no-store' });
+    if (!res.ok) return null;
 
+    const data = (await res.json()) as Record<string, unknown>;
+    if (typeof data.text !== 'string') return null;
     return {
       text: data.text.trim(),
-      reference: data.reference,
+      reference: typeof data.reference === 'string' ? data.reference : reference,
     };
   } catch (error) {
-    console.error('Bible API Error:', error);
-    if (version !== 'kjv') {
-      return fetchVerse(reference, 'kjv');
-    }
+    console.error('Bible verse fetch:', error);
     return null;
   }
 }
