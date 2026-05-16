@@ -3,7 +3,11 @@
  */
 
 import type { BibleChapterVerse } from '@/lib/bible-api';
-import { BIBLE_BOOK_ID_MAP, getVersionForBibleAPI } from '@/lib/bible-api-version';
+import {
+  BIBLE_BOOK_ID_MAP,
+  canonicalEnglishBibleBookName,
+  getVersionForBibleAPI,
+} from '@/lib/bible-api-version';
 
 export async function fetchChapterFromUpstream(
   book: string,
@@ -14,7 +18,9 @@ export async function fetchChapterFromUpstream(
   if (normalized === 'asnd') return null;
 
   if (normalized === 'tagalog') {
-    const id = BIBLE_BOOK_ID_MAP[book];
+    const canonical = canonicalEnglishBibleBookName(book);
+    if (!canonical) return null;
+    const id = BIBLE_BOOK_ID_MAP[canonical];
     if (!id) return null;
     const bookNr = parseInt(id, 10);
     if (!Number.isFinite(bookNr)) return null;
@@ -37,13 +43,14 @@ export async function fetchChapterFromUpstream(
       }))
       .filter((v) => Number.isFinite(v.verse));
     verses.sort((a, b) => a.verse - b.verse);
-    const refHint = typeof data.name === 'string' ? data.name : `${book} ${chapter}`;
+    const refHint = typeof data.name === 'string' ? data.name : `${canonical} ${chapter}`;
     return { verses, reference: refHint };
   }
 
   try {
     const apiVersion = getVersionForBibleAPI(normalized);
-    const formattedBook = book.replace(/\s+/g, '+');
+    const bookForApi = canonicalEnglishBibleBookName(book) ?? book.trim().replace(/\s+/g, ' ');
+    const formattedBook = bookForApi.replace(/\s+/g, '+');
     const url = `https://bible-api.com/${formattedBook}+${chapter}?translation=${apiVersion}`;
 
     const response = await fetch(url, {

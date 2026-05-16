@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { BIBLE_BOOKS, BIBLE_VERSIONS } from '@/lib/bible-data';
@@ -16,8 +16,33 @@ import { cn } from '@/lib/utils';
 
 const ALLOWED_BIBLE_VERSIONS = new Set(BIBLE_VERSIONS.map((v) => v.value));
 
+function bibleVersionStorageKey(userId: string): string {
+  return `ssb_bible_version:${userId}`;
+}
+
+function readStoredBibleVersion(userId: string): string | null {
+  if (typeof window === 'undefined') return null;
+  const raw = sessionStorage.getItem(bibleVersionStorageKey(userId))?.toLowerCase().trim();
+  if (!raw || !ALLOWED_BIBLE_VERSIONS.has(raw)) return null;
+  return normalizeBibleVersionKey(raw);
+}
+
+function writeStoredBibleVersion(userId: string, version: string): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(bibleVersionStorageKey(userId), version);
+}
+
+function clearStoredBibleVersion(userId: string): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(bibleVersionStorageKey(userId));
+}
+
 function normalizeBibleVersionKey(raw: string | null | undefined): string {
-  const key = raw?.toLowerCase().trim() || 'kjv';
+  const lowered = typeof raw === 'string' ? raw.toLowerCase().trim() : '';
+  const key = lowered || 'kjv';
+  // Legacy keys (older builds used these identifiers; bible-api.com removed them)
+  if (key === 'bsb') return 'web';
+  if (key === 'clementine') return 'dra';
   return ALLOWED_BIBLE_VERSIONS.has(key) ? key : 'kjv';
 }
 
@@ -29,10 +54,8 @@ export default function HomePage() {
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
   const [aiPrefill, setAiPrefill] = useState<string | null>(null);
   const [readerSelectionCount, setReaderSelectionCount] = useState(0);
-  /** Controlled select must not use only server value or the UI snaps back before Supabase finishes. */
+  /** Bible version for reader + settings (sessionStorage wins over stale profile refetches). */
   const [localBibleVersion, setLocalBibleVersion] = useState('kjv');
-  /** Only seed `localBibleVersion` from Supabase once per login — never on every profile refetch (stale reads reset you to KJV). */
-  const bibleVersionSeededForUserId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -48,13 +71,13 @@ export default function HomePage() {
   }, [profile]);
 
   useEffect(() => {
-    if (!user?.id) {
-      bibleVersionSeededForUserId.current = null;
+    if (!user?.id) return;
+    const stored = readStoredBibleVersion(user.id);
+    if (stored) {
+      setLocalBibleVersion(stored);
       return;
     }
     if (!profile) return;
-    if (bibleVersionSeededForUserId.current === user.id) return;
-    bibleVersionSeededForUserId.current = user.id;
     setLocalBibleVersion(normalizeBibleVersionKey(profile.preferred_bible_version));
   }, [user?.id, profile]);
 
@@ -72,6 +95,7 @@ export default function HomePage() {
 
     const next = normalizeBibleVersionKey(version);
     const previous = localBibleVersion;
+    writeStoredBibleVersion(user.id, next);
     setLocalBibleVersion(next);
 
     const { data, error } = await supabase
@@ -83,17 +107,21 @@ export default function HomePage() {
 
     if (error) {
       console.error('Failed to update Bible version:', error);
+      if (previous && ALLOWED_BIBLE_VERSIONS.has(previous)) {
+        writeStoredBibleVersion(user.id, previous);
+      } else {
+        clearStoredBibleVersion(user.id);
+      }
       setLocalBibleVersion(previous);
       return;
     }
 
     const updated = Array.isArray(data) ? data[0] : data;
     if (!updated?.preferred_bible_version) {
-      console.error(
-        'Bible version was not saved (0 rows updated). Check that your profile row exists and RLS allows UPDATE on profiles.'
+      // Keep UI + sessionStorage; empty RETURNING often means 0 rows updated but we still want the chosen translation.
+      console.warn(
+        'Bible version update returned no row (check profiles RLS / missing profile row). Keeping selection in this session.'
       );
-      setLocalBibleVersion(previous);
-      return;
     }
 
     await refreshProfile();

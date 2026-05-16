@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { canonicalEnglishBibleBookName } from '@/lib/bible-api-version';
 import { bookNameToUsfm, chapterId } from '@/lib/book-usfm';
 import { christSegmentsFromApiBibleHtml } from '@/lib/scripture-html-red-letter';
 import type { ChristWordSegment } from '@/lib/bible-red-letter';
+
+export const dynamic = 'force-dynamic';
 
 type ScriptureVerseRow = { verse: number; text: string; christSegments?: ChristWordSegment[] };
 
@@ -331,15 +334,17 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const book = req.nextUrl.searchParams.get('book');
+  const rawBook = req.nextUrl.searchParams.get('book')?.trim();
   const chapterStr = req.nextUrl.searchParams.get('chapter');
-  if (!book || !chapterStr) {
+  if (!rawBook || !chapterStr) {
     return NextResponse.json({ error: 'Missing book and chapter (or reference)' }, { status: 400 });
   }
   const chapter = parseInt(chapterStr, 10);
   if (!Number.isFinite(chapter)) {
     return NextResponse.json({ error: 'Invalid chapter' }, { status: 400 });
   }
+
+  const book = canonicalEnglishBibleBookName(rawBook) ?? rawBook;
 
   const cid = chapterId(book, chapter);
   if (!cid) {

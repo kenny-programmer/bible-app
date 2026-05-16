@@ -66,6 +66,44 @@ async function fetchAsndVerse(reference: string): Promise<{ text: string; refere
   }
 }
 
+async function fetchChapterViaAppRoute(
+  book: string,
+  chapter: number,
+  version: string
+): Promise<{ verses: BibleChapterVerse[]; reference: string } | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const params = new URLSearchParams({
+      book,
+      chapter: String(chapter),
+      version,
+    });
+    const res = await fetch(`/api/bible/chapter?${params}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data?.error || !Array.isArray(data.verses)) return null;
+    return {
+      verses: data.verses.map((vv: Record<string, unknown>) => ({
+        verse: Number(vv.verse),
+        text: typeof vv.text === 'string' ? vv.text.trim() : String(vv.text ?? ''),
+        christSegments:
+          Array.isArray(vv.christSegments) ?
+            vv.christSegments.filter(
+              (s): s is { text: string; wordsOfChrist: boolean } =>
+                Boolean(s && typeof (s as { text?: unknown }).text === 'string')
+            ).map((s) => ({
+              text: (s as { text: string }).text,
+              wordsOfChrist: Boolean((s as { wordsOfChrist?: unknown }).wordsOfChrist),
+            }))
+          : undefined,
+      })),
+      reference: typeof data.reference === 'string' ? data.reference : `${book} ${chapter}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchChapter(
   book: string,
   chapter: number,
@@ -77,27 +115,12 @@ export async function fetchChapter(
     return fetchAsndChapter(book, chapter);
   }
 
+  const proxied = await fetchChapterViaAppRoute(book, chapter, normalized);
+  if (proxied) return proxied;
+
   try {
-    if (typeof window === 'undefined') {
-      const { fetchChapterFromUpstream } = await import('./bible-chapter-fetch');
-      return fetchChapterFromUpstream(book, chapter, normalized);
-    }
-
-    const qs = new URLSearchParams({
-      book,
-      chapter: String(chapter),
-      version: normalized,
-    });
-    const res = await fetch(`/api/bible/chapter?${qs}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-
-    const json = (await res.json()) as Record<string, unknown>;
-    if (json.error != null || !Array.isArray(json.verses)) return null;
-
-    return {
-      verses: json.verses as BibleChapterVerse[],
-      reference: String(json.reference ?? `${book} ${chapter}`),
-    };
+    const { fetchChapterFromUpstream } = await import('./bible-chapter-fetch');
+    return fetchChapterFromUpstream(book, chapter, normalized);
   } catch (error) {
     console.error('Bible chapter fetch:', error);
     return null;
@@ -106,20 +129,21 @@ export async function fetchChapter(
 
 async function fetchTagalogVerse(reference: string): Promise<{ text: string; reference: string } | null> {
   try {
-    const match = reference.match(/^(\d?\s*\w+(?:\s+\w+)*)\s+(\d+):(\d+)(?:-(\d+))?$/);
+    const trimmed = reference.trim();
+    const match = trimmed.match(/^(\d?\s*[\w][\w\s]{0,40}?)\s+(\d+):(\d+)(?:-(\d+))?$/i);
     if (!match) {
       console.error('Invalid verse reference format');
       return null;
     }
 
     const [, bookName, chapterNum, startVerse, endVerse] = match;
-    const chapter = parseInt(chapterNum);
+    const chapter = parseInt(chapterNum, 10);
 
     const chapterData = await fetchChapter(bookName.trim(), chapter, 'tagalog');
     if (!chapterData) return null;
 
-    const start = parseInt(startVerse);
-    const end = endVerse ? parseInt(endVerse) : start;
+    const start = parseInt(startVerse, 10);
+    const end = endVerse ? parseInt(endVerse, 10) : start;
 
     const verses = chapterData.verses
       .filter(v => v.verse >= start && v.verse <= end)
@@ -128,10 +152,30 @@ async function fetchTagalogVerse(reference: string): Promise<{ text: string; ref
 
     return {
       text: verses,
-      reference: reference,
+      reference: trimmed,
     };
   } catch (error) {
     console.error('Tagalog verse fetch error:', error);
+    return null;
+  }
+}
+
+async function fetchVerseViaAppRoute(
+  reference: string,
+  version: string
+): Promise<{ text: string; reference: string } | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const params = new URLSearchParams({
+      reference: reference.trim(),
+      version,
+    });
+    const res = await fetch(`/api/bible/verse?${params}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data?.error || typeof data.text !== 'string') return null;
+    return { text: data.text.trim(), reference: typeof data.reference === 'string' ? data.reference : reference };
+  } catch {
     return null;
   }
 }
@@ -147,25 +191,12 @@ export async function fetchVerse(reference: string, version: BibleVersion = 'kjv
     return fetchAsndVerse(reference);
   }
 
+  const proxied = await fetchVerseViaAppRoute(reference, normalized);
+  if (proxied) return proxied;
+
   try {
-    if (typeof window === 'undefined') {
-      const { fetchVerseFromUpstream } = await import('./bible-chapter-fetch');
-      return fetchVerseFromUpstream(reference, normalized);
-    }
-
-    const qs = new URLSearchParams({
-      reference: reference.trim(),
-      version: normalized,
-    });
-    const res = await fetch(`/api/bible/verse?${qs}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-
-    const data = (await res.json()) as Record<string, unknown>;
-    if (typeof data.text !== 'string') return null;
-    return {
-      text: data.text.trim(),
-      reference: typeof data.reference === 'string' ? data.reference : reference,
-    };
+    const { fetchVerseFromUpstream } = await import('./bible-chapter-fetch');
+    return fetchVerseFromUpstream(reference, normalized);
   } catch (error) {
     console.error('Bible verse fetch:', error);
     return null;

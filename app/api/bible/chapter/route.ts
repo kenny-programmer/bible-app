@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { canonicalEnglishBibleBookName } from '@/lib/bible-api-version';
 import { BIBLE_BOOKS, BIBLE_VERSIONS } from '@/lib/bible-data';
 import { fetchChapterFromUpstream } from '@/lib/bible-chapter-fetch';
+
+export const dynamic = 'force-dynamic';
 
 const ALLOWED = new Set(BIBLE_VERSIONS.map((v) => v.value).filter((v) => v !== 'asnd'));
 
 export async function GET(req: NextRequest) {
-  const book = req.nextUrl.searchParams.get('book')?.trim();
+  const rawBook = req.nextUrl.searchParams.get('book')?.trim();
   const chapterStr = req.nextUrl.searchParams.get('chapter');
   const version = (req.nextUrl.searchParams.get('version') || 'kjv').toLowerCase().trim();
 
-  if (!book || !chapterStr) {
+  if (!rawBook || !chapterStr) {
     return NextResponse.json({ error: 'Missing book or chapter' }, { status: 400 });
   }
 
@@ -22,6 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid chapter' }, { status: 400 });
   }
 
+  const book = canonicalEnglishBibleBookName(rawBook) ?? rawBook;
   if (!BIBLE_BOOKS.some((b) => b.name === book)) {
     return NextResponse.json({ error: 'Unknown book' }, { status: 400 });
   }

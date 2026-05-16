@@ -69,12 +69,19 @@ const BOOK_NAME_TO_USFM: Record<string, string> = {
 };
 
 const BOOK_ALIASES: Record<string, string> = {
-  Psalm: 'Psalms', // e.g. "Psalm 23:1" in daily verse lists
+  Psalm: 'Psalms', // e.g. "Psalm 23:1" in verse lists
+  psalm: 'Psalms',
 };
 
 export function bookNameToUsfm(bookName: string): string | null {
-  const resolved = BOOK_ALIASES[bookName] ?? bookName;
-  return BOOK_NAME_TO_USFM[resolved] ?? null;
+  const t = bookName.trim();
+  if (!t) return null;
+
+  const byAliasKey = BOOK_ALIASES[t];
+  const normalized =
+    byAliasKey ?? (t.toLowerCase() === 'psalm' || t.toLowerCase() === 'psalms' ? 'Psalms' : t);
+
+  return BOOK_NAME_TO_USFM[normalized] ?? null;
 }
 
 export function chapterId(bookName: string, chapter: number): string | null {

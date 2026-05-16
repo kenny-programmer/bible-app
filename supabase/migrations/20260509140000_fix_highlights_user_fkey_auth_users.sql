@@ -17,3 +17,4 @@ ALTER TABLE highlights
   FOREIGN KEY (user_id)
   REFERENCES auth.users(id)
   ON DELETE CASCADE;
+  

@@ -71,18 +71,35 @@ export const BIBLE_BOOK_ID_MAP: Record<string, string> = {
   Revelation: '66',
 };
 
-const SUPPORTED_BIBLE_API_VERSIONS = ['kjv', 'web', 'bsb', 'asv', 'bbe', 'clementine', 'darby', 'ylt'];
+/**
+ * Normalizes loose book spellings/casing to keys in `BIBLE_BOOK_ID_MAP` (required by getBible).
+ * Returns null if unknown.
+ */
+export function canonicalEnglishBibleBookName(book: string): string | null {
+  const trimmed = book.trim().replace(/\s+/g, ' ');
+  if (!trimmed) return null;
+
+  if (trimmed in BIBLE_BOOK_ID_MAP) return trimmed;
+
+  const lc = trimmed.toLowerCase();
+  if (lc === 'psalm' || lc === 'psalms') return 'Psalms';
+
+  const found = (Object.keys(BIBLE_BOOK_ID_MAP) as Array<keyof typeof BIBLE_BOOK_ID_MAP>).find(
+    (k) => k.toLowerCase() === lc
+  );
+  return found ?? null;
+}
+
+const SUPPORTED_BIBLE_API_VERSIONS = ['kjv', 'web', 'asv', 'bbe', 'darby', 'dra', 'ylt'] as const;
 
 export function getVersionForBibleAPI(version: string): string {
   const normalized = version.toLowerCase();
 
-  if (normalized === 'dra') {
-    return 'clementine';
-  }
+  // Legacy keys (older builds used these identifiers; bible-api.com removed them)
+  if (normalized === 'bsb') return 'web';
+  if (normalized === 'clementine') return 'dra';
 
-  if (normalized === 'rva') {
-    return 'kjv';
-  }
-
-  return SUPPORTED_BIBLE_API_VERSIONS.includes(normalized) ? normalized : 'kjv';
+  return SUPPORTED_BIBLE_API_VERSIONS.includes(normalized as (typeof SUPPORTED_BIBLE_API_VERSIONS)[number])
+    ? normalized
+    : 'kjv';
 }

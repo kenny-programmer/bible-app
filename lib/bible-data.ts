@@ -70,11 +70,10 @@ export const BIBLE_BOOKS = [
 export type BibleVersion =
   | 'kjv'
   | 'web'
-  | 'bsb'
   | 'asv'
   | 'bbe'
-  | 'clementine'
   | 'darby'
+  | 'dra'
   | 'ylt'
   | 'tagalog'
   | 'asnd';
@@ -82,11 +81,10 @@ export type BibleVersion =
 export const BIBLE_VERSIONS = [
   { value: 'kjv', label: 'King James Version (KJV)' },
   { value: 'web', label: 'World English Bible (WEB)' },
-  { value: 'bsb', label: 'Berean Study Bible (BSB)' },
   { value: 'asv', label: 'American Standard Version (ASV)' },
   { value: 'bbe', label: 'Bible in Basic English (BBE)' },
-  { value: 'clementine', label: 'Clementine Latin Vulgate' },
   { value: 'darby', label: 'Darby Translation' },
+  { value: 'dra', label: 'Douay-Rheims (DRA)' },
   { value: 'ylt', label: "Young's Literal Translation" },
   { value: 'tagalog', label: 'Ang Biblia (Tagalog)' },
   { value: 'asnd', label: 'Ang Salita ng Dios (Tagalog ASND)' },

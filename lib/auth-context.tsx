@@ -87,8 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile]);
 
   const signOut = async () => {
+    const uid = user?.id;
     profileFetchGeneration.current += 1;
     await supabase.auth.signOut();
+    if (typeof window !== 'undefined' && uid) {
+      sessionStorage.removeItem(`ssb_bible_version:${uid}`);
+    }
     setUser(null);
     setProfile(null);
   };

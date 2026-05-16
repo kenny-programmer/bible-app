@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BIBLE_VERSIONS } from '@/lib/bible-data';
 import { fetchVerseFromUpstream } from '@/lib/bible-chapter-fetch';
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED = new Set(BIBLE_VERSIONS.map((v) => v.value).filter((v) => v !== 'asnd' && v !== 'tagalog'));
 
 export async function GET(req: NextRequest) {
