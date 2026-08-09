@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react';
-import { User } from '@supabase/supabase-js';
 import { supabase } from './supabase-client';
 import { Profile } from './supabase';
+import { handleLogOut } from '../app/actions';
 
 type AuthContextType = {
-  user: User | null;
+  user: any | null; // WorkOS user
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
@@ -21,11 +21,11 @@ const AuthContext = createContext<AuthContextType>({
   refreshProfile: async () => {},
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({ children, initialUser }: { children: React.ReactNode, initialUser?: any }) {
+  const [user, setUser] = useState<any | null>(initialUser ?? null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  /** Ignore stale profile responses when multiple fetches overlap (e.g. refresh + token refresh). */
+  /** Ignore stale profile responses when multiple fetches overlap. */
   const profileFetchGeneration = useRef(0);
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -52,49 +52,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (cancelled) return;
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-      if (!cancelled) setLoading(false);
-    })();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      void (async () => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          profileFetchGeneration.current += 1;
-          setProfile(null);
-        }
-        setLoading(false);
-      })();
-    });
-
-    return () => {
-      cancelled = true;
-      profileFetchGeneration.current += 1;
-      subscription.unsubscribe();
-    };
-  }, [fetchProfile]);
+    if (user) {
+      void fetchProfile(user.id);
+    } else {
+      setProfile(null);
+    }
+    setLoading(false);
+  }, [user, fetchProfile]);
 
   const signOut = async () => {
     const uid = user?.id;
     profileFetchGeneration.current += 1;
-    await supabase.auth.signOut();
+    
     if (typeof window !== 'undefined' && uid) {
       sessionStorage.removeItem(`ssb_bible_version:${uid}`);
     }
-    setUser(null);
     setProfile(null);
+    setUser(null);
+    
+    await handleLogOut();
   };
 
   return (
